@@ -139,6 +139,34 @@ uvicorn main:app --reload
 Open in browser: http://127.0.0.1:8000
 
 ---
+## System Design
+### Diagram
+![System Design](assets/SystemDesign.png)
+### Explanation
+#### 1. Video Input Layer 🎥
+Users submit a video stream, either from a file or live camera feed, via the web interface (FastAPI).
+#### 2. VideoToFrames Service 🔄
+A Celery worker picks up the video processing task.
+Converts the video into individual frames.
+Publishes these frames to RabbitMQ, organized by stream name (queue per video stream).
+
+#### 3. ROI Selection 🖱️
+GUI displays frames to the user.
+User defines the Region of Interest (ROI) to monitor.
+ROI parameters are saved and later used by the detection logic.
+
+#### 4. FrameReader Service 🤖
+Another Celery worker consumes frames from the corresponding RabbitMQ queue.
+Applies the YOLO object detection model on each frame.
+Executes business logic to detect violations (e.g., missing scooper usage).
+
+#### 5. Results Streaming 📡
+Annotated frames (with violation markers) are streamed back to the user via TCP sockets.
+Provides real-time visualization of detection results.
+
+#### 6. Data Persistence 💾
+Detected violations are logged into MongoDB.
+Stores timestamps, violation types, and any relevant metadata.
 
 ## DEMOS 😏😏
 ### Demo1
